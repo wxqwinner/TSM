@@ -10,8 +10,13 @@ if(TSM<0.5)
     end
 else
     for k = 1:length(n_)-1
-        if((n_(k)-1)>=1)
-            x(n_(k)) = (x(n_(k)-1)+x(n_(k+1)-1))/2;
+        if((n_(k)-1)>=1) %Avoid first sample
+            %Find the next non-zero sample
+            q = n_(k);
+            while(x(q)==0)
+                q = q+1;
+            end
+            x(n_(k)) = (x(n_(k)-1)+x(q))/2;
         end
     end
 end
