@@ -1,17 +1,17 @@
-% Plot the Features and log features
-
 close all
 clear all
 clc
 
-%% Feature Correlation Plot
+% Feature Correlation Plot
 
 testing_var = 0;
 
 % figure %Maximize this figure before continuing
 % file_to_load = 'MOVs_Final_Interp_to_test_with_source.mat';  %TSMDB Add 88 to 5280 below
-file_to_load = 'Features/MOVs_20200620Interpolate_to_test.mat';  %TSMDB
-num_files = 5280;
+file_to_load = 'Features/MOVs_20200820Interpolate_to_test_Std.mat';
+% file_to_load = 'Features/MOVs_20200620Interpolate_to_test.mat';  %TSMDB
+% file_to_load = 'Features/MOVs_20200703ToTest_Incl_Source_CatFuzzyFeat.mat';  %Fuzzy Features
+num_files = 2250;
 % file_to_load = 'Features/MOVs_20200620ToTest_Incl_Source.mat';  %TSMDB
 % num_files = 5520;
 MOV_start = 6;
@@ -31,7 +31,8 @@ chosen_features = 1:size(M,2);
 % chosen_features = [1,4,7:32,37,38];
 chosen_OMOV = OMOV(chosen_features);
 % M(isinf(M(:,18)),18) = 80; %Remove INF values from old SER calculation
-small_MOV = M(:,chosen_features);
+% M(isnan(M(:,37)),37:39) = 0; %Remove INF values from old SER calculation
+small_MOV = M(1:num_files,chosen_features);
 
 for n = 1:size(chosen_OMOV,2)
     chosen_OMOV(n) = {strrep(char(chosen_OMOV(n)),'_',' ')};
@@ -62,7 +63,7 @@ end
 % 
 % chosen_OMOV(42) = {'Anchor DM'};
 
-% %Interpolate To Test Feature Name Modifications
+% % %Interpolate To Test Feature Name Modifications
 chosen_OMOV(5) = {'Time-Scale Ratio (\beta)'};
 chosen_OMOV(12) = {'BandwidthTestB New'};
 chosen_OMOV(24) = {'\DeltaP'};
@@ -104,43 +105,87 @@ M_min = min(small_MOV(1:num_files,MOV_start:end));
 M_max = max(small_MOV(1:num_files,MOV_start:end));
 % M_min = min(small_MOV(88:end,MOV_start:end));
 % M_max = max(small_MOV(88:end,MOV_start:end));
-small_MOV(:,MOV_start:end) = (small_MOV(:,MOV_start:end)-M_min)./(M_max-M_min);
+small_MOV(:,MOV_start:end) = (small_MOV(:,MOV_start:end)-repmat(M_min,[size(small_MOV,1),1]))./repmat(M_max-M_min,[size(small_MOV,1),1]);
 [~,I] = sort(small_MOV(:,5));
 s = small_MOV(I,:);
 
-feat_corr_slow = abs(corr(s(1:3876,:)));
-% figure('Position',[1700 200 900 900])
-% imshow(feat_corr_slow,'InitialMagnification','fit','colormap',parula)
-% title('Slower')
+% feat_corr_slow = abs(corr(s(1:3876,:))); %FULL TSMDB
+feat_corr_slow = abs(corr(s(1:1577,:)));
+figure('Position',[0 0 880 600])
+imshow(feat_corr_slow,'InitialMagnification','fit','colormap',parula)
+title('Slower')
+axis on
+ax = gca;
+ax.YTick = 1:size(chosen_features,2);
+ax.YTickLabel = chosen_OMOV;
 % add_labels(chosen_OMOV)
-% % set(gcf, 'Position', get(0, 'Screensize'));
-% f = sprintf('Plots/Chosen_Feat_%s_Slower_Correlation',file_to_load(1:end-4));
-% % print([f '.png'],'-dpng')
-% % print([f '.eps'],'-depsc')
+% xticks([])
+% set(gcf, 'Position', get(0, 'Screensize'));
+% print('Plots/PNG/Slower_Feature_corr.png','-dpng')
+% print('Plots/EPSC/Slower_Feature_corr.eps','-depsc')
 
 
-feat_corr_fast = abs(corr(s(3877:end,:)));
-% figure('Position',[1700 200 900 900])
-% imshow(feat_corr_fast,'InitialMagnification','fit','colormap',parula)
-% title('Faster')
+% feat_corr_fast = abs(corr(s(3877:num_files,:))); %FULL TSMDB
+feat_corr_fast = abs(corr(s(1578:num_files,:)));
+figure('Position',[0 0 880 600])
+imshow(feat_corr_fast,'InitialMagnification','fit','colormap',parula)
+title('Faster')
+axis on
+ax = gca;
+ax.YTick = 1:size(chosen_features,2);
+ax.YTickLabel = chosen_OMOV;
 % add_labels(chosen_OMOV)
-% % set(gcf, 'Position', get(0, 'Screensize'));
-% f = sprintf('Plots/Chosen_Feat_%s_Faster_Correlation',file_to_load(1:end-4));
-% % print([f '.png'],'-dpng')
-% % print([f '.eps'],'-depsc')
-
+% xticks([])
+% set(gcf, 'Position', get(0, 'Screensize'));
+% print('Plots/PNG/Faster_Feature_corr.png','-dpng')
+% print('Plots/EPSC/Faster_Feature_corr.eps','-depsc')
 
 feat_corr_split = 0.5.*(feat_corr_slow+feat_corr_fast);
 figure('Position',[0 0 880 600])
 % set(groot,'defaultAxesTickLabelInterpreter','latex');  
 imshow(feat_corr_split,'InitialMagnification','fit','colormap',parula)
-% title('Average')
-add_labels(chosen_OMOV)
-xticks([])
+title('Average')
+% add_labels(chosen_OMOV)
+% xticks([])
+axis on
+ax = gca;
+ax.YTick = 1:size(chosen_features,2);
+ax.YTickLabel = chosen_OMOV;
 % set(gcf, 'Position', get(0, 'Screensize'));
 % f = sprintf('/Plots/Combination_Feat_%s_AvgSplit_Correlation',file_to_load(1:end-4));
-print('Plots/PNG/Feature_corr.png','-dpng')
-print('Plots/EPSC/Feature_corr.eps','-depsc')
+% print('Plots/PNG/Average_Feature_corr.png','-dpng')
+% print('Plots/EPSC/Average_Feature_corr.eps','-depsc')
+
+%Print out useful information
+fprintf('Slower correlation results\n');
+fprintf('Minimum SMOS correlation: %g\n', min(feat_corr_slow(6:32,1)));
+fprintf('Maximum SMOS correlation: %g\n', max(feat_corr_slow(6:32,1)));
+fprintf('Average SMOS correlation: %g\n\n', mean(feat_corr_slow(6:32,1)));
+
+fprintf('Faster correlation results\n');
+fprintf('Minimum SMOS correlation: %g\n', min(feat_corr_fast(6:32,1)));
+fprintf('Maximum SMOS correlation: %g\n', max(feat_corr_fast(6:32,1)));
+fprintf('Average SMOS correlation: %g\n\n', mean(feat_corr_fast(6:32,1)));
+
+fprintf('Average correlation results\n');
+fprintf('Minimum SMOS correlation: %g\n', min(feat_corr_split(6:32,1)));
+fprintf('Maximum SMOS correlation: %g\n', max(feat_corr_split(6:32,1)));
+fprintf('Average SMOS correlation: %g\n\n', mean(feat_corr_split(6:32,1)));
+
+fprintf('Slower correlation results\n');
+fprintf('Minimum TSM correlation: %g\n', min(feat_corr_slow(6:32,5)));
+fprintf('Maximum TSM correlation: %g\n', max(feat_corr_slow(6:32,5)));
+fprintf('Average TSM correlation: %g\n\n', mean(feat_corr_slow(6:32,5)));
+
+fprintf('Faster correlation results\n');
+fprintf('Minimum TSM correlation: %g\n', min(feat_corr_fast(6:32,5)));
+fprintf('Maximum TSM correlation: %g\n', max(feat_corr_fast(6:32,5)));
+fprintf('Average TSM correlation: %g\n\n', mean(feat_corr_fast(6:32,5)));
+
+fprintf('Average correlation results\n');
+fprintf('Minimum TSM correlation: %g\n', min(feat_corr_split(6:32,5)));
+fprintf('Maximum TSM correlation: %g\n', max(feat_corr_split(6:32,5)));
+fprintf('Average TSM correlation: %g\n\n', mean(feat_corr_split(6:32,5)));
 
 % feature_corr = (corr(small_MOV)+1)/2;
 % feature_corr_abs = abs(corr(small_MOV));
@@ -155,20 +200,100 @@ print('Plots/EPSC/Feature_corr.eps','-depsc')
 
 
 %% Animated Feature Plots
-load('../Subjective_Testing/TSM_MOS_Scores.mat');
-% load('MOVs_20200224Interpolate_to_test.mat'); %New Phasiness
-% file_to_load = 'MOVs_20191123Interpolate_to_test.mat';  %TSMDB
-% file_to_load = 'MOVs_20200227Interpolate_to_test.mat';
-% file_to_load = 'TransientMOVs_20200303Interpolate_to_test.mat';
-% load(file_to_load)
-MOVs = small_MOV;
-for k = 6:size(MOVs,2)
-    feat = k;
-%     if min(MOVs(:,feat))>0
-%         figure;
-%         %     f.Position = [1913 157 1280 720];
-%         hold on
-%         %Plot to set legend entries correctly
+% load('../Subjective_Testing/TSM_MOS_Scores.mat');
+% % load('MOVs_20200224Interpolate_to_test.mat'); %New Phasiness
+% % file_to_load = 'MOVs_20191123Interpolate_to_test.mat';  %TSMDB
+% % file_to_load = 'MOVs_20200227Interpolate_to_test.mat';
+% % file_to_load = 'TransientMOVs_20200303Interpolate_to_test.mat';
+% % load(file_to_load)
+% MOVs = small_MOV;
+% for k = 6:size(MOVs,2)
+%     feat = k;
+% %     if min(MOVs(:,feat))>0
+% %         figure;
+% %         %     f.Position = [1913 157 1280 720];
+% %         hold on
+% %         %Plot to set legend entries correctly
+% %         plot3(nan,nan,nan,'x','Color',[0,0.447,0.741])
+% %         plot3(nan,nan,nan,'x','Color',[0.85,0.325,0.098])
+% %         plot3(nan,nan,nan,'+','Color',[0.929,0.694,0.125])
+% %         plot3(nan,nan,nan,'+','Color',[0.494,0.184,0.556])
+% %         plot3(nan,nan,nan,'*','Color',[0.466,0.674,0.188])
+% %         plot3(nan,nan,nan,'*','Color',[0.301,0.745,0.933])
+% %         plot3(nan,nan,nan,'o','Color',[0,0.447,0.741])
+% %         plot3(nan,nan,nan,'o','Color',[0.85,0.325,0.098])
+% %         plot3(nan,nan,nan,'o','Color',[0.929,0.694,0.125])
+% %         for n = 1:size(MOVs,1)
+% %             switch data(n).method
+% %                 case 'PV'
+% %                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'x','Color',[0,0.447,0.741])
+% %                 case 'IPL'
+% %                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'x','Color',[0.85,0.325,0.098])
+% %                 case 'WSOLA'
+% %                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'+','Color',[0.929,0.694,0.125])
+% %                 case 'FESOLA'
+% %                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'+','Color',[0.494,0.184,0.556])
+% %                 case 'HPTSM'
+% %                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'*','Color',[0.466,0.674,0.188])
+% %                 case 'uTVS'
+% %                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'*','Color',[0.301,0.745,0.933])
+% %                 case 'Elastique'
+% %                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'o','Color',[0,0.447,0.741])
+% %                 case 'FuzzyTSM'
+% %                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'o','Color',[0.85,0.325,0.098])
+% %                 case 'NMFTSM'
+% %                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'o','Color',[0.929,0.694,0.125])
+% %                 otherwise
+% %                     disp('Unknown Method')
+% %             end
+% %         end
+% %         hold off
+% %         xlabel('MeanOS')
+% %         ylabel('TSM')
+% %         zlabel(['10log_1_0(' strrep(char(chosen_OMOV(feat)),'_','\_')])
+% %         title(strrep(char(chosen_OMOV(feat)),'_','\_'))
+% %         axis([1 5 0.2 2 min(10*log10(MOVs(:,feat))) max(10*log10(MOVs(:,feat)))])
+% %         legend({'PV', 'IPL', 'WSOLA', 'FESOLA', 'HPTSM', 'uTVS', 'Elastique', 'FuzzyTSM', 'NMFTSM'})
+% %         grid on
+% %         v = VideoWriter(['./Plots/Video/10log10_' char(OMOV(feat))]);
+% %         v.FrameRate = 25;
+% %         open(v)
+% %         w = 0.5*(1 - cos(2*pi*(0:100-1)'/(100-1)));
+% %         azum = zeros(size(w'));
+% %         for n = 1:length(w)
+% %             azum(n) = sum(w(1:n));
+% %         end
+% %         azum = [azum fliplr(azum)];
+% %         azum = 90*azum/max(azum);
+% %         w = 0.5*(1 - cos(2*pi*(0:50-1)'/(50-1)));
+% %         el = zeros(size(w'));
+% %         for n = 1:length(w)
+% %             el(n) = sum(w(1:n));
+% %         end
+% %         el = [el fliplr(el)];
+% %         el = 40*el/max(el);
+% %         el = [el el];
+% % 
+% %         set(gcf, 'Position', get(0, 'Screensize'));
+% %         for n = 1:length(azum)
+% %             view([azum(n) el(n)])
+% %             %         pause(1/25)
+% %             %         disp(f.Position)
+% %             %         fprintf('Setting Position\n')
+% %             %         f.Position = [1913 157 1280 720];
+% %             %         disp(f.Position)
+% %             %         pause(1/25)
+% %             %         fprintf('Writing Frame\n')
+% %             writeVideo(v,getframe(gcf));
+% % 
+% %         end
+% %         close(v)
+% %         close(gcf)
+% %     end
+%     f = figure(2);
+%     %     f.Position = [1913 157 1280 720];
+%     hold on
+%     %Plot to set legend entries correctly
 %         plot3(nan,nan,nan,'x','Color',[0,0.447,0.741])
 %         plot3(nan,nan,nan,'x','Color',[0.85,0.325,0.098])
 %         plot3(nan,nan,nan,'+','Color',[0.929,0.694,0.125])
@@ -178,156 +303,76 @@ for k = 6:size(MOVs,2)
 %         plot3(nan,nan,nan,'o','Color',[0,0.447,0.741])
 %         plot3(nan,nan,nan,'o','Color',[0.85,0.325,0.098])
 %         plot3(nan,nan,nan,'o','Color',[0.929,0.694,0.125])
-%         for n = 1:size(MOVs,1)
-%             switch data(n).method
-%                 case 'PV'
-%                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'x','Color',[0,0.447,0.741])
-%                 case 'IPL'
-%                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'x','Color',[0.85,0.325,0.098])
-%                 case 'WSOLA'
-%                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'+','Color',[0.929,0.694,0.125])
-%                 case 'FESOLA'
-%                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'+','Color',[0.494,0.184,0.556])
-%                 case 'HPTSM'
-%                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'*','Color',[0.466,0.674,0.188])
-%                 case 'uTVS'
-%                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'*','Color',[0.301,0.745,0.933])
-%                 case 'Elastique'
-%                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'o','Color',[0,0.447,0.741])
-%                 case 'FuzzyTSM'
-%                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'o','Color',[0.85,0.325,0.098])
-%                 case 'NMFTSM'
-%                     plot3(MOVs(n,1),MOVs(n,3),10*log10(MOVs(n,feat)),'o','Color',[0.929,0.694,0.125])
-%                 otherwise
-%                     disp('Unknown Method')
-%             end
+%     for n = 1:size(MOVs,1)
+%         switch data(n).method
+%             case 'PV'
+%                 plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'x','Color',[0,0.447,0.741])
+%             case 'IPL'
+%                 plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'x','Color',[0.85,0.325,0.098])
+%             case 'WSOLA'
+%                 plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'+','Color',[0.929,0.694,0.125])
+%             case 'FESOLA'
+%                 plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'+','Color',[0.494,0.184,0.556])
+%             case 'HPTSM'
+%                 plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'*','Color',[0.466,0.674,0.188])
+%             case 'uTVS'
+%                 plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'*','Color',[0.301,0.745,0.933])
+%             case 'Elastique'
+%                 plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'o','Color',[0,0.447,0.741])
+%             case 'FuzzyTSM'
+%                 plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'o','Color',[0.85,0.325,0.098])
+%             case 'NMFTSM'
+%                 plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'o','Color',[0.929,0.694,0.125])
+%             otherwise
+%                 disp('Unknown Method')
 %         end
-%         hold off
-%         xlabel('MeanOS')
-%         ylabel('TSM')
-%         zlabel(['10log_1_0(' strrep(char(chosen_OMOV(feat)),'_','\_')])
-%         title(strrep(char(chosen_OMOV(feat)),'_','\_'))
-%         axis([1 5 0.2 2 min(10*log10(MOVs(:,feat))) max(10*log10(MOVs(:,feat)))])
-%         legend({'PV', 'IPL', 'WSOLA', 'FESOLA', 'HPTSM', 'uTVS', 'Elastique', 'FuzzyTSM', 'NMFTSM'})
-%         grid on
-%         v = VideoWriter(['./Plots/Video/10log10_' char(OMOV(feat))]);
-%         v.FrameRate = 25;
-%         open(v)
-%         w = 0.5*(1 - cos(2*pi*(0:100-1)'/(100-1)));
-%         azum = zeros(size(w'));
-%         for n = 1:length(w)
-%             azum(n) = sum(w(1:n));
-%         end
-%         azum = [azum fliplr(azum)];
-%         azum = 90*azum/max(azum);
-%         w = 0.5*(1 - cos(2*pi*(0:50-1)'/(50-1)));
-%         el = zeros(size(w'));
-%         for n = 1:length(w)
-%             el(n) = sum(w(1:n));
-%         end
-%         el = [el fliplr(el)];
-%         el = 40*el/max(el);
-%         el = [el el];
-% 
-%         set(gcf, 'Position', get(0, 'Screensize'));
-%         for n = 1:length(azum)
-%             view([azum(n) el(n)])
-%             %         pause(1/25)
-%             %         disp(f.Position)
-%             %         fprintf('Setting Position\n')
-%             %         f.Position = [1913 157 1280 720];
-%             %         disp(f.Position)
-%             %         pause(1/25)
-%             %         fprintf('Writing Frame\n')
-%             writeVideo(v,getframe(gcf));
-% 
-%         end
-%         close(v)
-%         close(gcf)
 %     end
-    f = figure(2);
-    %     f.Position = [1913 157 1280 720];
-    hold on
-    %Plot to set legend entries correctly
-        plot3(nan,nan,nan,'x','Color',[0,0.447,0.741])
-        plot3(nan,nan,nan,'x','Color',[0.85,0.325,0.098])
-        plot3(nan,nan,nan,'+','Color',[0.929,0.694,0.125])
-        plot3(nan,nan,nan,'+','Color',[0.494,0.184,0.556])
-        plot3(nan,nan,nan,'*','Color',[0.466,0.674,0.188])
-        plot3(nan,nan,nan,'*','Color',[0.301,0.745,0.933])
-        plot3(nan,nan,nan,'o','Color',[0,0.447,0.741])
-        plot3(nan,nan,nan,'o','Color',[0.85,0.325,0.098])
-        plot3(nan,nan,nan,'o','Color',[0.929,0.694,0.125])
-    for n = 1:size(MOVs,1)
-        switch data(n).method
-            case 'PV'
-                plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'x','Color',[0,0.447,0.741])
-            case 'IPL'
-                plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'x','Color',[0.85,0.325,0.098])
-            case 'WSOLA'
-                plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'+','Color',[0.929,0.694,0.125])
-            case 'FESOLA'
-                plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'+','Color',[0.494,0.184,0.556])
-            case 'HPTSM'
-                plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'*','Color',[0.466,0.674,0.188])
-            case 'uTVS'
-                plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'*','Color',[0.301,0.745,0.933])
-            case 'Elastique'
-                plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'o','Color',[0,0.447,0.741])
-            case 'FuzzyTSM'
-                plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'o','Color',[0.85,0.325,0.098])
-            case 'NMFTSM'
-                plot3(MOVs(n,1),MOVs(n,5),MOVs(n,feat),'o','Color',[0.929,0.694,0.125])
-            otherwise
-                disp('Unknown Method')
-        end
-    end
-    hold off
-    xlabel('MeanOS')
-    ylabel('TSM')
-    zlabel(strrep(char(chosen_OMOV(feat)),'_','\_'))
-    title(strrep(char(chosen_OMOV(feat)),'_','\_'))
-    axis([1 5 0.2 2 min(MOVs(:,feat)) max(MOVs(:,feat))])
-    legend({'PV', 'IPL', 'WSOLA', 'FESOLA', 'HPTSM', 'uTVS', 'Elastique', 'FuzzyTSM', 'NMFTSM'},'Location','NorthEastOutside')
-    grid on
-    set(gca,...
-    'FontSize', 18, ...
-    'FontName', 'Times');
-    v = VideoWriter(['./Plots/Video/' char(chosen_OMOV(feat))]);
-    v.FrameRate = 25;
-    open(v)
-    w = 0.5*(1 - cos(2*pi*(0:100-1)'/(100-1)));
-    azum = zeros(size(w'));
-    for n = 1:length(w)
-        azum(n) = sum(w(1:n));
-    end
-    azum = [azum fliplr(azum)];
-    azum = 90*azum/max(azum);
-    w = 0.5*(1 - cos(2*pi*(0:50-1)'/(50-1)));
-    el = zeros(size(w'));
-    for n = 1:length(w)
-        el(n) = sum(w(1:n));
-    end
-    el = [el fliplr(el)];
-    el = 40*el/max(el);
-    el = [el el];
-
-    set(gcf, 'Position', get(0, 'Screensize'));
-    for n = 1:length(azum)
-        view([azum(n) el(n)])
-        %         pause(1/25)
-        %         disp(f.Position)
-        %         fprintf('Setting Position\n')
-        %         f.Position = [1913 157 1280 720];
-        %         disp(f.Position)
-        %         pause(1/25)
-        %         fprintf('Writing Frame\n')
-        writeVideo(v,getframe(gcf));
-
-    end
-    close(v)
-    close(gcf)
-end
+%     hold off
+%     xlabel('MeanOS')
+%     ylabel('TSM')
+%     zlabel(strrep(char(chosen_OMOV(feat)),'_','\_'))
+%     title(strrep(char(chosen_OMOV(feat)),'_','\_'))
+%     axis([1 5 0.2 2 min(MOVs(:,feat)) max(MOVs(:,feat))])
+%     legend({'PV', 'IPL', 'WSOLA', 'FESOLA', 'HPTSM', 'uTVS', 'Elastique', 'FuzzyTSM', 'NMFTSM'},'Location','NorthEastOutside')
+%     grid on
+%     set(gca,...
+%     'FontSize', 18, ...
+%     'FontName', 'Times');
+%     v = VideoWriter(['./Plots/Video/' char(chosen_OMOV(feat))]);
+%     v.FrameRate = 25;
+%     open(v)
+%     w = 0.5*(1 - cos(2*pi*(0:100-1)'/(100-1)));
+%     azum = zeros(size(w'));
+%     for n = 1:length(w)
+%         azum(n) = sum(w(1:n));
+%     end
+%     azum = [azum fliplr(azum)];
+%     azum = 90*azum/max(azum);
+%     w = 0.5*(1 - cos(2*pi*(0:50-1)'/(50-1)));
+%     el = zeros(size(w'));
+%     for n = 1:length(w)
+%         el(n) = sum(w(1:n));
+%     end
+%     el = [el fliplr(el)];
+%     el = 40*el/max(el);
+%     el = [el el];
+% 
+%     set(gcf, 'Position', get(0, 'Screensize'));
+%     for n = 1:length(azum)
+%         view([azum(n) el(n)])
+%         %         pause(1/25)
+%         %         disp(f.Position)
+%         %         fprintf('Setting Position\n')
+%         %         f.Position = [1913 157 1280 720];
+%         %         disp(f.Position)
+%         %         pause(1/25)
+%         %         fprintf('Writing Frame\n')
+%         writeVideo(v,getframe(gcf));
+% 
+%     end
+%     close(v)
+%     close(gcf)
+% end
 
 
 
@@ -595,6 +640,56 @@ end
 % f = sprintf('Plots/EPSC/%s_Features_%d_to_%d.eps',file_to_load,k-(mod(size(MOVs,2)-MOV_start,New_Figure)),k);
 % print(f,'-depsc')
 
+%% Plot Fuzzy Decomposition Feature comparison to MOS and TSM Ratio
+figure('Position',[0 0 618 651])
+% set(gcf, 'Position', get(0, 'Screensize'));
+% clf
+source = 88;
+MOV_start = 33;
+MOV_end = 35;
+MOVs = small_MOV;
+n = num_files;
+for k = MOV_start:MOV_end
+    subplot(MOV_end-MOV_start+1,2,mod((k-MOV_start),MOV_end-MOV_start+1)*2+1);
+    h = histogram2(MOVs(source+1:source+n,1),MOVs(source+1:source+n,k),[75 75],'FaceColor','flat');
+    h.DisplayStyle = 'tile';
+    h.EdgeAlpha = 0;
+    view(2)
+    %     colormap(gray);
+    c = colorbar;
+    c.Label.String = 'Count';
+    %     t = sprintf('%s vs MOS',strrep(char(chosen_OMOV{k}),'_','\_'));
+    %     title(t)
+    xlabel('MeanOS')
+    ylabel(strrep(char(chosen_OMOV{k}),'_','\_'))
+    set(gca,...
+        'FontSize', 12, ...
+        'FontName', 'Times');
+    
+    subplot(MOV_end-MOV_start+1,2,mod((k-MOV_start),MOV_end-MOV_start+1)*2+2);
+    h = histogram2(MOVs(source+1:source+n,5),MOVs(source+1:source+n,k),[20 75],'FaceColor','flat');
+    h.DisplayStyle = 'tile';
+    h.EdgeAlpha = 0;
+    view(2)
+    %     colormap(gray);
+    c = colorbar;
+    c.Label.String = 'Count';
+    %     t = sprintf('%s vs TSM',strrep(char(chosen_OMOV{k}),'_','\_'));
+    %     title(t)
+    xlabel('Time-Scale Ratio (\beta)')
+    ylabel(strrep(char(chosen_OMOV{k}),'_','\_'))
+    set(gca,...
+        'FontSize', 12, ...
+        'FontName', 'Times');
+    
+    %     clf
+end
+
+f = sprintf('Plots/PNG/Fuzzy_Features.png');%,file_to_load(1:end-4),strrep(char(chosen_OMOV{k}),'\',''));
+print(f,'-dpng')
+f = sprintf('Plots/EPSC/Fuzzy_Features.eps');%,file_to_load(1:end-4),strrep(char(chosen_OMOV{k}),'\',''));
+print(f,'-depsc')
+
 %% Plot Phasiness Feature comparison to MOS and TSM Ratio
 figure('Position',[0 0 618 835])
 % set(gcf, 'Position', get(0, 'Screensize'));
@@ -744,27 +839,29 @@ f = sprintf('Plots/EPSC/Spec_Sim_Features.eps');%,file_to_load(1:end-4),strrep(c
 print(f,'-depsc')
 
 
+
+
 close all
 % 
-function add_labels(chosen_OMOV)
-h = gca;
-h.Visible = 'On';
-% xticks(1:size(chosen_OMOV,2))
-% xticklabels(chosen_OMOV)
-% xtickangle(90)
-yticks(1:size(chosen_OMOV,2))
-set(h,'TickLabelInterpreter', 'tex');
-yticklabels(chosen_OMOV)
-c = colorbar;
-c.Label.String = '|\rho|';
-set(gca,...
-    'FontSize', 12, ...
-    'FontName', 'Times');
-c.Label.FontSize = 18;
-c.Label.FontName = 'Times';
-c.Label.Position = [2.7 0.535];
-c.Label.Rotation = 0; % to rotate the text
-
-
-
-end
+% function add_labels(chosen_OMOV)
+% h = gca;
+% h.Visible = 'On';
+% % xticks(1:size(chosen_OMOV,2))
+% % xticklabels(chosen_OMOV)
+% % xtickangle(90)
+% yticks(1:size(chosen_OMOV,2))
+% set(h,'TickLabelInterpreter', 'tex');
+% yticklabels(chosen_OMOV)
+% c = colorbar;
+% c.Label.String = '|\rho|';
+% set(gca,...
+%     'FontSize', 12, ...
+%     'FontName', 'Times');
+% c.Label.FontSize = 18;
+% c.Label.FontName = 'Times';
+% c.Label.Position = [2.7 0.535];
+% c.Label.Rotation = 0; % to rotate the text
+% 
+% 
+% 
+% end
